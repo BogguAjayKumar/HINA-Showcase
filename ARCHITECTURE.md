@@ -22,11 +22,13 @@ graph TD
         STT --> EventLoop[Central Async Event Loop]
         VisionCap --> EventLoop
         EventLoop <--> Memory[SQLite Episodic & Working Memory]
-        EventLoop <--> Brain[Multimodal Reasoning: Gemini Flash-Lite / 3.5]
+        EventLoop <--> Brain[Multi-Provider LLM Brain: Gemini / Groq / OpenAI / Claude]
+        Brain <--> KeyPool[KeyPoolManager: Rotation & 429 Cooldown]
         Brain --> ToolRouter[Dynamic Tool Dispatcher & Parser]
     end
 
-    subgraph "Execution Layer (20 Tools)"
+    subgraph "Execution Layer (24 Tools)"
+        ToolRouter --> ExtAPIs[Live Weather, Breaking News & Market Quotes]
         ToolRouter --> OSExec[OS & PowerShell Process Automation]
         ToolRouter --> WebTools[Live Web Search & Webpage Scraper]
         ToolRouter --> CalMail[SQLite Calendar & IMAP/SMTP Email]
@@ -61,20 +63,14 @@ graph TD
 ### B. Custom Agent Engine (`hina/brain/`)
 1. **Zero Framework Bloat:**
    - Implemented in standard asynchronous Python (`asyncio`) without reliance on heavy frameworks like LangChain or CrewAI.
-2. **Cognitive Fallback Cascade:**
-   - Employs an active fallback chain:
-     ```python
-     FALLBACK_MODELS = [
-         "gemini-flash-lite-latest",
-         "gemini-3.5-flash-lite",
-         "gemini-3.5-flash",
-         "gemini-3.1-flash-lite"
-     ]
-     ```
-   - Automatically handles 503 high-demand spikes and 429 quota exhaustion, falling back across active models seamlessly in under 500ms.
-3. **Function Calling Protocol:**
-   - Tools are auto-introspected via Python type hints and docstrings into Google GenAI and OpenAI JSON function schemas.
-   - Execution responses use `role='user'` for strict compatibility with Google GenAI SDK standards.
+2. **Multi-Provider Cognitive Fallback:**
+   - Employs a cross-provider fallback hierarchy (`gemini` -> `groq` -> `openai` -> `claude` -> `deepseek` -> `ollama`).
+   - If any provider experiences 429 quota exhaustion, downtime, or rate limiting, HINA automatically fails over to the next provider seamlessly in real time.
+3. **Dynamic API Key Pooling (`key_pool.py`):**
+   - Implements thread-safe key pool management supporting multiple keys per provider.
+   - Detects 429 quota exhaustion, sets a dynamic cooldown period, and immediately rotates to the next available healthy key in the pool.
+4. **Unified Tool Calling Protocol:**
+   - Tools are auto-introspected via Python type hints and docstrings into standard tool schemas, natively executed across Gemini, OpenAI, Groq, and Anthropic tool formats.
 
 ### C. Multimodal Screen & Camera Perception (`hina/vision/`)
 1. **Windows .NET Display Capture:**

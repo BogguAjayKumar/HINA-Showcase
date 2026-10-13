@@ -69,18 +69,26 @@ The following core subsystems have been developed, calibrated, and operationaliz
 * **Webcam Integration:** Real-time OpenCV video frame capture.
 * **Multimodal Reasoning:** Sends high-resolution visual frames directly into Gemini's vision engine to diagnose compile errors, explain code, read browser tabs, or describe physical objects shown to the camera.
 
-### 5. 20 Dynamic Desktop & OS Automation Tools
+### 5. Multi-Provider Cognitive Engine & Automatic Key Pooling
+* **Multi-LLM Cross-Provider Fallback:** Native support for Google Gemini, Groq, OpenAI, Anthropic Claude, DeepSeek, OpenRouter, and local Ollama. If a primary provider hits rate limits, quota caps, or downtime, HINA transparently switches to the next configured provider in real time.
+* **API Key Pooling & Failover:** Supports key rotation pools (`GEMINI_API_KEYS=k1,k2,k3`). On `429 Too Many Requests` or quota limits, keys are placed in cooldown and HINA immediately engages the next available key.
+* **Sub-Second Groq Voice Response:** Integration with Groq's high-speed inference engine enables sub-second voice completions (~250ms).
+
+### 6. 24 Dynamic Desktop, OS & Real-Time Service Automation Tools
+* **Real-Time Weather API:** Live global weather, temperature, humidity, wind, and forecasts via Open-Meteo & wttr.in (zero configuration required) or OpenWeatherMap (`get_live_weather`).
+* **Live Breaking News:** Real-time headlines and topical news streams via Google News RSS & NewsAPI (`get_live_news`).
+* **Financial & Crypto Markets:** Real-time quotes and daily percentage changes for stocks (AAPL, NVDA, TSLA) and cryptocurrencies (BTC, ETH, SOL) via Yahoo Finance & CoinGecko (`get_market_quote`).
 * **System Control:** Non-blocking application launcher (`open_application`), PowerShell process runner, and real-time GPU/RAM/CPU hardware monitoring.
 * **Web & Search:** Real-time search engine integration (`search_web`), webpage content extraction & summarization (`fetch_webpage`), and browser automation.
 * **Calendar & Schedule:** Persistent SQLite-backed calendar manager (`get_calendar_events`, `add_calendar_event`, `delete_calendar_event`).
 * **Email Suite:** Live IMAP email reading and SMTP dispatching (`check_emails`, `send_email`).
 * **Filesystem:** Direct file search, reading, writing, and directory navigation.
 
-### 6. Smart Home & IoT Hub
+### 7. Smart Home & IoT Hub
 * **Home Assistant Integration:** Entity discovery and REST API control for lights, switches, media players, and climate units.
 * **Direct MQTT Support:** Raw MQTT payload publishing for local microcontrollers (ESP32, Tasmota, Zigbee2MQTT).
 
-### 7. Persistent Episodic Memory
+### 8. Persistent Episodic Memory
 * **Local Storage:** Automatic SQLite database logging recent conversation turns, user preferences, and persistent facts in `data/hina_memory.db`.
 
 ---
@@ -89,7 +97,10 @@ The following core subsystems have been developed, calibrated, and operationaliz
 
 | Voice Command | Action Executed by HINA |
 | :--- | :--- |
-| *"Hina, open my notepad."* | Cleans conversational prefixes, resolves `notepad.exe`, launches it non-blockingly, and confirms speech output. |
+| *"Hina, what's the weather in Paris?"* | Queries real-time weather API and speaks current temperature, wind speed, and conditions. |
+| *"Hina, what is Bitcoin trading at today?"* | Queries live market quote API and reports current USD price and 24h percentage change. |
+| *"Hina, what are the top technology headlines?"* | Parses live news feeds and reads the top 3 breaking technology stories. |
+| *"Hina, open my notepad."* | Resolves `notepad.exe`, launches it non-blockingly, and confirms speech output. |
 | *"Hina, open youtube.com."* | Detects web domain and opens YouTube in the default system browser. |
 | *"Hina, what is my system status?"* | Queries `nvidia-smi` and Windows CIM instances; speaks back GPU temperature, VRAM usage, and RAM load. |
 | *"Hina, look at my screen and tell me what you see."* | Snaps desktop display, analyzes the window layout and code with multimodal vision, and provides verbal feedback. |
@@ -106,9 +117,9 @@ The following core subsystems have been developed, calibrated, and operationaliz
 | :--- | :--- | :--- |
 | **Wake Word Detection** | OpenWakeWord + VAD Spotting | ~35 ms |
 | **Speech-to-Text (STT)** | Faster-Whisper (`base.en` on CUDA) | ~110 ms |
-| **Reasoning & Tool Selection** | Gemini Flash-Lite / 3.5-Flash | ~450 ms |
+| **Reasoning (Groq / Gemini Lite)** | Groq / Gemini Flash-Lite | **~250 - 450 ms** |
 | **Text-to-Speech (TTS)** | Edge-TTS Neural Streaming | ~180 ms |
-| **Total Voice-to-Voice Loop** | Full Duplex Pipeline | **~775 ms** |
+| **Total Voice-to-Voice Loop** | Full Duplex Pipeline | **~650 - 775 ms** |
 
 ---
 
@@ -118,7 +129,10 @@ The following core subsystems have been developed, calibrated, and operationaliz
 - [x] GPU-accelerated local STT (Faster-Whisper on CUDA)
 - [x] Full-duplex audio stream with barge-in interruption & echo suppression
 - [x] British Neural Female Speech Synthesizer
-- [x] Desktop & OS Automation suite (20 registered tools)
+- [x] Multi-Provider LLM cognitive engine (Gemini, Groq, OpenAI, Claude, DeepSeek, Ollama)
+- [x] Dynamic API key pooling & automatic 429 quota failover
+- [x] Desktop & OS Automation suite (24 registered tools)
+- [x] Real-time external services (Live Weather, Live News, Financial/Crypto Quotes)
 - [x] Multimodal screen and webcam perception
 - [x] Smart home integration (Home Assistant & MQTT)
 - [ ] 3D Cybernetic holographic UI overlay (DirectX / Modern Web HUD)
