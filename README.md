@@ -8,7 +8,7 @@
 [![Voice](https://img.shields.io/badge/TTS-Neural%20British%20Female-red?style=for-the-badge)](https://github.com/rany2/edge-tts)
 
 > **⚠️ PROJECT STATUS: UNDER ACTIVE DEVELOPMENT**  
-> *HINA is an ongoing open research and development project inspired by J.A.R.V.I.S. The core voice pipeline, vision engine, and OS automation framework have been developed from scratch with zero vendor lock-in. Active feature enhancements and hardware integrations are currently in progress.*
+> *HINA is an ongoing open research and development project . The core voice pipeline, vision engine, and OS automation framework have been developed from scratch with zero vendor lock-in. Active feature enhancements and hardware integrations are currently in progress.*
 
 ---
 
