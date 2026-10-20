@@ -6,6 +6,8 @@ rich>=13.7.0
 python-dotenv>=1.0.1
 requests>=2.31.0
 websockets>=12.0
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
 beautifulsoup4>=4.12.0
 
 # Audio & Speech Processing
@@ -13,10 +15,6 @@ sounddevice>=0.4.6
 numpy>=1.26.0,<2.0.0
 scipy>=1.12.0
 faster-whisper>=1.0.0
-onnxruntime>=1.17.0
-openwakeword>=0.6.0
-edge-tts>=6.1.0
-silero-vad>=5.1.2
 
 # Vision & Desktop Automation
 opencv-python>=4.9.0.80
@@ -28,7 +26,12 @@ pywin32>=306
 # Smart Home & Protocols
 paho-mqtt>=2.0.0
 
-# Cloud Brain Integration (Gemini, OpenAI, Anthropic & OpenAI-compatible providers)
-google-genai>=0.1.1
+# OpenAI-compatible client (used for local Ollama; no cloud account is required)
 openai>=1.25.0
-anthropic>=0.30.0
+
+# Testing & Quality Assurance
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+
+# Desktop Chat UI
+PyQt6>=6.6.0

@@ -1,0 +1,12 @@
+# Install only the integrations you plan to use. Local chat does not need these.
+
+# Gemini and Anthropic reasoning providers
+google-genai>=1.0.0
+anthropic>=0.30.0
+
+# Optional online text-to-speech engine
+edge-tts>=6.1.0
+
+# Optional acoustic wake-word integration (supply a local HINA model file)
+openwakeword>=0.6.0
+onnxruntime>=1.17.0

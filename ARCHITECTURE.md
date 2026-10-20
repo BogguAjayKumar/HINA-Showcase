@@ -1,100 +1,58 @@
-# HINA — System Architecture & Technical Specifications
+# HINA System Architecture
 
-This document provides a deep dive into the engineering principles, audio pipelines, multimodal routing, and agent architecture powering **Project HINA**.
+This document describes the current HINA-Core design. The showcase repository contains documentation; see [HINA-Core](https://github.com/BogguAjayKumar/HINA-Core) for the executable source and setup steps.
 
----
-
-## 1. High-Level System Architecture
+## Request flow
 
 ```mermaid
 graph TD
-    User([User Voice / Actions]) <--> MicCam[Microphone / Webcam / Screen]
-
-    subgraph "Perception Layer (Local NVIDIA CUDA)"
-        MicCam --> AudioIn[Audio Ingestion & Ring Buffer]
-        AudioIn --> WakeWord[Wake Word Engine: 'Hina']
-        WakeWord --> VAD[Silero VAD / Barge-In Monitor]
-        VAD --> STT[Faster-Whisper STT - CUDA FP16]
-        MicCam --> VisionCap[.NET Desktop Screen & OpenCV Camera Grabber]
-    end
-
-    subgraph "HINA Agent Engine (Custom Zero-Bloat Core)"
-        STT --> EventLoop[Central Async Event Loop]
-        VisionCap --> EventLoop
-        EventLoop <--> Memory[SQLite Episodic & Working Memory]
-        EventLoop <--> Brain[Multi-Provider LLM Brain: Gemini / Groq / OpenAI / Claude]
-        Brain <--> KeyPool[KeyPoolManager: Rotation & 429 Cooldown]
-        Brain --> ToolRouter[Dynamic Tool Dispatcher & Parser]
-    end
-
-    subgraph "Execution Layer (24 Tools)"
-        ToolRouter --> ExtAPIs[Live Weather, Breaking News & Market Quotes]
-        ToolRouter --> OSExec[OS & PowerShell Process Automation]
-        ToolRouter --> WebTools[Live Web Search & Webpage Scraper]
-        ToolRouter --> CalMail[SQLite Calendar & IMAP/SMTP Email]
-        ToolRouter --> IoT[Home Assistant API & MQTT Broker]
-    end
-
-    subgraph "Speech Output Subsystem"
-        Brain --> SpeechSynth[British Neural Female Voice: SoniaNeural]
-        SpeechSynth --> AudioOut[Audio Playback Engine]
-        VAD -. Barge-In Cutoff .-> AudioOut
-    end
-
-    AudioOut --> User
+    User[User] <--> UI[Desktop chat, voice loop, or local API]
+    UI --> Engine[HINA conversation engine]
+    Engine <--> Memory[Local SQLite conversation history and saved facts]
+    Engine --> Policy[Provider and tool confirmation policies]
+    Policy --> Local[Ollama on loopback by default]
+    Policy --> Cloud[Optional cloud LLM providers]
+    Policy --> Approval[Approval card: approve or cancel]
+    Approval --> Tools[Approved local, web, email, calendar, or smart-home tools]
+    Local --> Engine
+    Cloud --> Engine
+    Tools --> Engine
+    Engine --> UI
 ```
 
----
+## Conversation interfaces
 
-## 2. Core Architectural Components
+- The desktop chat is a PyQt6 application with text input, optional microphone input, spoken replies, session history, and study shortcuts.
+- The voice assistant uses the project's audio modules. Faster-Whisper can transcribe audio locally. The selected TTS engine determines how speech is generated; optional Edge TTS is an external service.
+- The FastAPI interface listens on loopback by default and does not enable permissive cross-origin browser access.
 
-### A. Low-Latency Voice Core (`hina/audio/`)
-1. **Audio Ingestion & Downmixing:**
-   - Realtek laptop microphone arrays operate in stereo (2 channels). HINA captures both channels and averages them into a balanced mono stream (`np.mean(indata, axis=1)`), preventing channel phase cancellation.
-   - Built-in software automatic gain control amplifies low microphone signals by up to 10× so soft speech is picked up cleanly.
-2. **Full-Duplex Barge-In Interruption:**
-   - Silero Voice Activity Detection runs alongside speaker playback.
-   - When the user starts speaking over HINA, the playback thread is killed instantaneously (`MediaPlayer.Stop()`), clearing the speech buffer in < 25ms.
-   - Short wake-word acknowledgments (*"Yes, sir?"*) use echo protection and buffer flushing to avoid laptop speaker bleed triggering self-interruptions.
-3. **GPU-Accelerated Speech-to-Text:**
-   - `faster-whisper` runs locally using CTranslate2 with float16 precision on NVIDIA RTX Tensor cores.
-   - Peak normalization standardizes audio volume before inference, ensuring 99%+ transcription accuracy.
+## Reasoning and privacy modes
 
-### B. Custom Agent Engine (`hina/brain/`)
-1. **Zero Framework Bloat:**
-   - Implemented in standard asynchronous Python (`asyncio`) without reliance on heavy frameworks like LangChain or CrewAI.
-2. **Multi-Provider Cognitive Fallback:**
-   - Employs a cross-provider fallback hierarchy (`gemini` -> `groq` -> `openai` -> `claude` -> `deepseek` -> `ollama`).
-   - If any provider experiences 429 quota exhaustion, downtime, or rate limiting, HINA automatically fails over to the next provider seamlessly in real time.
-3. **Dynamic API Key Pooling (`key_pool.py`):**
-   - Implements thread-safe key pool management supporting multiple keys per provider.
-   - Detects 429 quota exhaustion, sets a dynamic cooldown period, and immediately rotates to the next available healthy key in the pool.
-4. **Unified Tool Calling Protocol:**
-   - Tools are auto-introspected via Python type hints and docstrings into standard tool schemas, natively executed across Gemini, OpenAI, Groq, and Anthropic tool formats.
+`HINA_LOCAL_ONLY=true` is the default. HINA routes reasoning only to Ollama and requires the configured Ollama URL to resolve to a loopback address. It does not use cloud fallback in this mode. A remote Ollama host is rejected by the same check.
 
-### C. Multimodal Screen & Camera Perception (`hina/vision/`)
-1. **Windows .NET Display Capture:**
-   - Replaces fragile GDI `BitBlt` with .NET `System.Drawing.Graphics.CopyFromScreen`, ensuring 100% reliable capture regardless of DPI scaling or GPU switching.
-2. **Webcam Frame Sampling:**
-   - OpenCV captures video frames on demand, optimizes dimensions to 1280px, and encodes directly into compressed JPEG bytes for multimodal LLM transmission.
+Cloud providers are an explicit opt-in through `HINA_LOCAL_ONLY=false` and provider credentials. In that mode, prompts and any attached content sent to a provider are subject to that provider's handling. HINA's external lookups and connected-service tools also require user approval before execution.
 
----
+## Memory and user control
 
-## 3. Directory Structure
+- Conversation history and long-term facts are stored in local SQLite.
+- HINA only prepares a long-term fact write after the user explicitly asks to remember it; the write then requires a separate approval.
+- Users can review or remove saved facts and clear chat history and facts from the desktop chat.
+- SQLite data is not encrypted by HINA. The clear-data action does not remove notes, reminders, lists, or other files maintained by integrations.
+
+## Tool execution and approvals
+
+Tool calls are routed through the shared registry. Tools that change local state, launch applications, access connected accounts, or send a query to an external service are configured to request confirmation. HINA returns a pending action with an approval identifier; the chat UI offers Approve and Cancel controls. A model-provided `confirmed` field does not authorize execution.
+
+Approval should be reviewed against the displayed action details. Some integrations require credentials and access to local or external services; they are optional and must be configured by the user.
+
+## Main code areas
 
 ```text
-Dline/
-├── config/
-│   ├── settings.yaml          # System & audio parameters
-│   └── persona.yaml           # British persona & prompt constraints
-├── hina/
-│   ├── main.py                # Central entrypoint (Voice & CLI loops)
-│   ├── config.py              # Configuration & secrets loader
-│   ├── audio/                 # Audio stream, VAD, STT, TTS, Wake Word
-│   ├── brain/                 # Memory engine, LLM reasoning provider, Orchestrator
-│   ├── vision/                # .NET Screen & OpenCV camera frame capturers
-│   └── tools/                 # OS, Filesystem, Browser, Email/Calendar, Smart Home
-├── data/                      # Local SQLite memory and caches
-├── models/                    # Local neural weights (OpenWakeWord, Whisper)
-└── requirements.txt
+config/       Runtime settings and HINA's conversation persona
+hina/audio/   Audio input, transcription, wake-word handling, and speech output
+hina/brain/   Conversation engine, provider selection, and SQLite memory
+hina/gui/     Desktop status overlay and chat companion
+hina/tools/   Registered desktop, filesystem, web, and connected-service tools
+hina/vision/  Screen and camera capture
+run_hina_chat.bat   Desktop chat launcher for Windows
 ```

@@ -1,155 +1,31 @@
-# HINA (Hyper-Interactive Neural Assistant)
-### Next-Generation Multimodal AI Voice Companion & Desktop Automation Agent
+# HINA
 
-[![Status](https://img.shields.io/badge/Status-Under%20Active%20Development-orange?style=for-the-badge&logo=git)](https://github.com/BogguAjayKumar/HINA-Showcase)
-[![Python](https://img.shields.io/badge/Python-3.12-blue?style=for-the-badge&logo=python)](https://python.org)
-[![CUDA](https://img.shields.io/badge/NVIDIA%20CUDA-12.4-green?style=for-the-badge&logo=nvidia)](https://developer.nvidia.com/cuda-toolkit)
-[![Speech](https://img.shields.io/badge/STT-Faster--Whisper-purple?style=for-the-badge)](https://github.com/SYSTRAN/faster-whisper)
-[![Voice](https://img.shields.io/badge/TTS-Neural%20British%20Female-red?style=for-the-badge)](https://github.com/rany2/edge-tts)
+HINA (Hyper-Interactive Neural Assistant) is a desktop voice and chat companion for study support, planning, everyday questions, and computer tasks. The showcase repository documents the project; the executable application lives in [HINA-Core](https://github.com/BogguAjayKumar/HINA-Core).
 
-> **⚠️ PROJECT STATUS: UNDER ACTIVE DEVELOPMENT**  
-> *HINA is an ongoing open research and development project . The core voice pipeline, vision engine, and OS automation framework have been developed from scratch with zero vendor lock-in. Active feature enhancements and hardware integrations are currently in progress.*
+> Project status: active development. Capabilities depend on the local machine, installed models, and configured integrations.
 
----
+## What HINA can do
 
-## 🌟 Overview
+- Chat through a native desktop window or use the voice assistant.
+- Listen to personal stories, respond conversationally, explain new topics, and help make realistic study plans.
+- Offer study prompts, active-recall quizzes, and focus timers.
+- Keep conversation history locally and save long-term facts only when the user asks and approves the save.
+- Use tools for supported desktop, file, reminder, web, email, calendar, and smart-home tasks, with an approval step before consequential actions or external requests.
+- Use a local Ollama model by default. Cloud reasoning providers are optional.
 
-**HINA** (*Hyper-Interactive Neural Assistant*) is a modular, multimodal desktop companion and smart home controller designed to bridge conversational AI with physical operating system execution. 
+See the [core repository README](https://github.com/BogguAjayKumar/HINA-Core#readme) for current setup and launch instructions.
 
-Unlike conventional voice bots that rely on bloated third-party agent wrappers (like LangChain or CrewAI), HINA is **architected completely from scratch** around an asynchronous event loop, local CUDA-accelerated speech processing, full-duplex acoustic interruption, and direct OS/IoT tool invocation.
+## Privacy and action approvals
 
-```
-                              ┌────────────────────────────────────────┐
-                              │      Microphone / Webcam / Screen      │
-                              └────────────────────┬───────────────────┘
-                                                   │
-                        ┌──────────────────────────▼──────────────────────────┐
-                        │      Local Perception Core (CUDA Accelerated)       │
-                        │   • OpenWakeWord ("Hina") • Silero VAD (Barge-In)   │
-                        │   • Faster-Whisper STT    • .NET Screen / Camera    │
-                        └──────────────────────────┬──────────────────────────┘
-                                                   │
-                        ┌──────────────────────────▼──────────────────────────┐
-                        │      HINA Agent Engine (Custom Orchestrator)        │
-                        │   • SQLite Episodic Memory • Dynamic Tool Registry  │
-                        │   • Multimodal Cloud Brain (Gemini 2.5/3.5/Flash)   │
-                        └──────────┬────────────────────────────────┬─────────┘
-                                   │                                │
-        ┌──────────────────────────▼─────────────┐   ┌──────────────▼─────────────┐
-        │        Action & Tool Dispatcher        │   │     Speech Output Engine   │
-        │ • OS Execution & Powershell Automation │   │ • British Neural Voice     │
-        │ • Web Browsing & Deep Search           │   │ • Full-Duplex Barge-In     │
-        │ • Calendar & Email Management          │   │ • Acoustic Echo Gating     │
-        │ • Home Assistant & MQTT IoT Hub        │   └────────────────────────────┘
-        └────────────────────────────────────────┘
-```
+- HINA defaults to local-only reasoning with Ollama on this computer. In that mode, it refuses a non-loopback Ollama endpoint and does not fall back to a cloud LLM.
+- Setting `HINA_LOCAL_ONLY=false` opts into configured cloud reasoning. Chat content may then be sent to the selected provider. The chat window shows the configured mode.
+- External lookups and actions that can share information or change state require explicit approval before they run. Review the details and approve or cancel each request.
+- Conversations and saved facts are stored in a local SQLite database. HINA does not encrypt that database. The clear-data control removes chat history and saved facts; it does not delete notes, reminders, lists, or files.
+- Voice input is transcribed locally when using the bundled Faster-Whisper path. Optional integrations such as Edge TTS may communicate with their service; choose and configure integrations with that data flow in mind.
 
----
+These controls reduce unintended sharing and actions, but local storage is still accessible to software running under the same Windows account.
 
-## 🎯 What We Have Achieved So Far
+## Repositories
 
-The following core subsystems have been developed, calibrated, and operationalized on local hardware:
-
-### 1. Full-Duplex Voice Engine with Barge-In Interruption
-* **Wake Word Trigger:** Instant acoustic activation on *"Hina"* or *"Hey Hina"* with both two-stage confirmation (*"Yes, sir?"*) and fluid one-shot commands (*"Hina, open notepad"*).
-* **Barge-In Interruption:** Powered by Silero Voice Activity Detection (VAD). If HINA is actively speaking through your speakers and you start talking, she immediately cuts off playback and listens to you.
-* **Acoustic Feedback Protection:** Dynamic energy filtering and buffer draining prevent laptop speaker bleed from triggering false self-interruptions.
-
-### 2. GPU-Accelerated Local Speech-to-Text (STT)
-* **Zero Cloud Latency for Voice:** Powered by `faster-whisper` running locally on **NVIDIA RTX GPUs** with FP16 tensor acceleration.
-* **Automatic Gain Normalization:** Custom signal amplification boosts quiet laptop microphone arrays by up to 10×, allowing Whisper to accurately transcribe speech from across the room.
-* **Prompt Biasing:** Neural decoding is conditioned on domain vocabulary (`Hina`, `system status`, `screen`, `open`) to achieve near-zero false transcription rates.
-
-### 3. Natural British Neural Female Voice (TTS)
-* **Primary Engine:** Studio-grade British Neural Female Voice (`en-GB-SoniaNeural`), generating expressive speech with sub-200ms streaming playback.
-* **Local Fallback:** Windows Speech API (`Microsoft Zira Desktop`) for offline speech generation.
-
-### 4. Multimodal Screen & Webcam Perception
-* **Real-Time Screen Awareness:** High-speed desktop frame grabber using Windows .NET GDI/Graphics, completely immune to display scaling and GPU switching issues.
-* **Webcam Integration:** Real-time OpenCV video frame capture.
-* **Multimodal Reasoning:** Sends high-resolution visual frames directly into Gemini's vision engine to diagnose compile errors, explain code, read browser tabs, or describe physical objects shown to the camera.
-
-### 5. Multi-Provider Cognitive Engine & Automatic Key Pooling
-* **Multi-LLM Cross-Provider Fallback:** Native support for Google Gemini, Groq, OpenAI, Anthropic Claude, DeepSeek, OpenRouter, and local Ollama. If a primary provider hits rate limits, quota caps, or downtime, HINA transparently switches to the next configured provider in real time.
-* **API Key Pooling & Failover:** Supports key rotation pools (`GEMINI_API_KEYS=k1,k2,k3`). On `429 Too Many Requests` or quota limits, keys are placed in cooldown and HINA immediately engages the next available key.
-* **Sub-Second Groq Voice Response:** Integration with Groq's high-speed inference engine enables sub-second voice completions (~250ms).
-
-### 6. 24 Dynamic Desktop, OS & Real-Time Service Automation Tools
-* **Real-Time Weather API:** Live global weather, temperature, humidity, wind, and forecasts via Open-Meteo & wttr.in (zero configuration required) or OpenWeatherMap (`get_live_weather`).
-* **Live Breaking News:** Real-time headlines and topical news streams via Google News RSS & NewsAPI (`get_live_news`).
-* **Financial & Crypto Markets:** Real-time quotes and daily percentage changes for stocks (AAPL, NVDA, TSLA) and cryptocurrencies (BTC, ETH, SOL) via Yahoo Finance & CoinGecko (`get_market_quote`).
-* **System Control:** Non-blocking application launcher (`open_application`), PowerShell process runner, and real-time GPU/RAM/CPU hardware monitoring.
-* **Web & Search:** Real-time search engine integration (`search_web`), webpage content extraction & summarization (`fetch_webpage`), and browser automation.
-* **Calendar & Schedule:** Persistent SQLite-backed calendar manager (`get_calendar_events`, `add_calendar_event`, `delete_calendar_event`).
-* **Email Suite:** Live IMAP email reading and SMTP dispatching (`check_emails`, `send_email`).
-* **Filesystem:** Direct file search, reading, writing, and directory navigation.
-
-### 7. Smart Home & IoT Hub
-* **Home Assistant Integration:** Entity discovery and REST API control for lights, switches, media players, and climate units.
-* **Direct MQTT Support:** Raw MQTT payload publishing for local microcontrollers (ESP32, Tasmota, Zigbee2MQTT).
-
-### 8. Persistent Episodic Memory
-* **Local Storage:** Automatic SQLite database logging recent conversation turns, user preferences, and persistent facts in `data/hina_memory.db`.
-
----
-
-## 🗣️ Supported Voice Commands (Live Demonstration)
-
-| Voice Command | Action Executed by HINA |
-| :--- | :--- |
-| *"Hina, what's the weather in Paris?"* | Queries real-time weather API and speaks current temperature, wind speed, and conditions. |
-| *"Hina, what is Bitcoin trading at today?"* | Queries live market quote API and reports current USD price and 24h percentage change. |
-| *"Hina, what are the top technology headlines?"* | Parses live news feeds and reads the top 3 breaking technology stories. |
-| *"Hina, open my notepad."* | Resolves `notepad.exe`, launches it non-blockingly, and confirms speech output. |
-| *"Hina, open youtube.com."* | Detects web domain and opens YouTube in the default system browser. |
-| *"Hina, what is my system status?"* | Queries `nvidia-smi` and Windows CIM instances; speaks back GPU temperature, VRAM usage, and RAM load. |
-| *"Hina, look at my screen and tell me what you see."* | Snaps desktop display, analyzes the window layout and code with multimodal vision, and provides verbal feedback. |
-| *"Hina, schedule Project Demo for tomorrow at 3 PM."* | Stores the meeting in the persistent SQLite calendar database and confirms the time. |
-| *"Hina, search the web for the latest Python news."* | Runs live DuckDuckGo query, extracts the top search snippets, and speaks a concise 2-sentence summary. |
-
----
-
-## ⚡ Latency & Performance Benchmarks
-
-*Benchmarked on an Intel Core i7 / NVIDIA GeForce RTX 5050 Laptop GPU (8GB VRAM) running Windows 11:*
-
-| Pipeline Stage | Technology | Average Latency |
-| :--- | :--- | :--- |
-| **Wake Word Detection** | OpenWakeWord + VAD Spotting | ~35 ms |
-| **Speech-to-Text (STT)** | Faster-Whisper (`base.en` on CUDA) | ~110 ms |
-| **Reasoning (Groq / Gemini Lite)** | Groq / Gemini Flash-Lite | **~250 - 450 ms** |
-| **Text-to-Speech (TTS)** | Edge-TTS Neural Streaming | ~180 ms |
-| **Total Voice-to-Voice Loop** | Full Duplex Pipeline | **~650 - 775 ms** |
-
----
-
-## 🗺️ Project Roadmap
-
-- [x] Architecture design from scratch (Zero LangChain / CrewAI bloat)
-- [x] GPU-accelerated local STT (Faster-Whisper on CUDA)
-- [x] Full-duplex audio stream with barge-in interruption & echo suppression
-- [x] British Neural Female Speech Synthesizer
-- [x] Multi-Provider LLM cognitive engine (Gemini, Groq, OpenAI, Claude, DeepSeek, Ollama)
-- [x] Dynamic API key pooling & automatic 429 quota failover
-- [x] Desktop & OS Automation suite (24 registered tools)
-- [x] Real-time external services (Live Weather, Live News, Financial/Crypto Quotes)
-- [x] Multimodal screen and webcam perception
-- [x] Smart home integration (Home Assistant & MQTT)
-- [ ] 3D Cybernetic holographic UI overlay (DirectX / Modern Web HUD)
-- [ ] Fully offline local LLM brain option (Llama 3.2 8B / Qwen 2.5 on RTX GPU)
-- [ ] Proactive situational awareness (Time-based autonomous check-ins)
-
----
-
-## 🔒 Privacy & Data Ownership
-
-* **RAM-Only Voice Processing:** Voice input is processed exclusively in transient RAM buffers. **Zero audio recordings are saved to disk.**
-* **Local GPU Inference:** Whisper transcription runs 100% offline on your local GPU. Raw microphone audio is never uploaded to any cloud server.
-* **Local Memory Database:** Conversation history and calendar items remain strictly within your local machine.
-
----
-
-## 📜 License & Acknowledgments
-
-This showcase repository is distributed under the **MIT License**.  
-Developed by **Boggu Ajay Kumar** as an advanced exploration of agentic computing, real-time audio systems, and multimodal human-machine interaction.
+- [HINA-Core](https://github.com/BogguAjayKumar/HINA-Core): application source code and setup instructions.
+- [HINA-Showcase](https://github.com/BogguAjayKumar/HINA-Showcase): project overview and architecture notes.
