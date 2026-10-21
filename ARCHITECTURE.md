@@ -23,7 +23,8 @@ graph TD
 ## Conversation interfaces
 
 - The desktop chat is a PyQt6 application with text input, optional microphone input, spoken replies, session history, and study shortcuts.
-- The voice assistant uses the project's audio modules. Faster-Whisper can transcribe audio locally. The selected TTS engine determines how speech is generated; optional Edge TTS is an external service.
+- The voice assistant uses multilingual Faster-Whisper for local transcription and per-language MMS models for local speech generation. MMS TTS selects a GPU only when the installed PyTorch build supports its compute architecture, and retries on CPU if GPU inference fails. Optional Edge TTS is an external service.
+- The conversation persona explicitly supports ordinary multilingual chat, study coaching, planning, and listening. Tools are optional action capabilities; their schemas do not limit the topics or languages HINA can discuss.
 - The FastAPI interface listens on loopback by default and does not enable permissive cross-origin browser access.
 
 ## Reasoning and privacy modes

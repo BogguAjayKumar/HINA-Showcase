@@ -1,12 +1,15 @@
 # HINA
 
-HINA (Hyper-Interactive Neural Assistant) is a desktop voice and chat companion for study support, planning, everyday questions, and computer tasks. The showcase repository documents the project; the executable application lives in [HINA-Core](https://github.com/BogguAjayKumar/HINA-Core).
+HINA (Hyper-Interactive Neural Assistant) is a privacy-first desktop AI companion for voice and text conversations, study support, planning, and approved computer tasks. HINA can understand and respond in 24 languages, including English, Hindi, Marathi, and Telugu. The showcase repository documents the project; the executable application lives in [HINA-Core](https://github.com/BogguAjayKumar/HINA-Core).
 
 > Project status: active development. Capabilities depend on the local machine, installed models, and configured integrations.
 
 ## What HINA can do
 
 - Chat through a native desktop window or use the voice assistant.
+- Speak, transcribe, and chat in 24 languages with local Faster-Whisper, Qwen3, and per-language MMS voice models.
+- Discuss ideas naturally, get study plans and encouragement, and ask for suggestions without needing a tool call.
+- Use on-device speech inference, with CPU fallback when the installed GPU is not supported by the current PyTorch build.
 - Listen to personal stories, respond conversationally, explain new topics, and help make realistic study plans.
 - Offer study prompts, active-recall quizzes, and focus timers.
 - Keep conversation history locally and save long-term facts only when the user asks and approves the save.
