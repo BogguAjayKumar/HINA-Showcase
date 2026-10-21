@@ -8,6 +8,7 @@ HINA (Hyper-Interactive Neural Assistant) is a privacy-first desktop AI companio
 
 - Chat through a native desktop window or use the voice assistant.
 - Speak, transcribe, and chat in 24 languages with local Faster-Whisper, Qwen3, and per-language MMS voice models.
+- Translate text between supported languages while preserving meaning, tone, and formatting.
 - Discuss ideas naturally, get study plans and encouragement, and ask for suggestions without needing a tool call.
 - Use on-device speech inference, with CPU fallback when the installed GPU is not supported by the current PyTorch build.
 - Listen to personal stories, respond conversationally, explain new topics, and help make realistic study plans.
